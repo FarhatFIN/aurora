@@ -33,6 +33,30 @@ None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
 
 (newest first, §11.4 template)
 
+## Session 2026-09-14-0030 — M2 slice 2 in flight: tokenizer prerequisites, entities table
+- **Milestone:** M2 — HTML to DOM   **WBS items touched:** none ticked yet (tokenizer not complete)
+- **Implemented:**
+  - `tools/gen_entities.py` + generated `tables.rs`: the full named
+    character-reference table (2,231 entries) from the WHATWG entities
+    JSON, per the §6.2 preamble's "generated at build time" intent
+    (committed artifact + regeneration command instead of build-time
+    network fetch — hermetic CI).
+  - WIP (untracked, documented in FOR-NEXT-AGENT.txt): `token.rs` (Token
+    model + State enum), `cursor.rs` (CR/LF preprocessing + reprocess
+    push-back), `reference.rs` (named/numeric references, windows-1252
+    remap, attribute ambiguity, unit tests).
+- **Tested:** fast tier — 103 passed / 0 failed (aurora_html table
+  compiles clean; WIP modules are not yet wired into lib.rs, their tests
+  run once the tokenizer lands).
+- **Bench:** n/a
+- **Decisions:** Character runs (`Character(String)`) adopted from the
+  start — the §5.4 sketch explicitly permits it and html5lib expectations
+  merge consecutive characters. Committed generated table over
+  build-time generation for hermetic CI (§8.2: no network).
+- **Debts opened/closed:** none new; WIP is tracked in the handoff file.
+- **Next task:** finish `tokenizer.rs` (§13.4 state machine), wire the
+  modules, then §5.5 tree construction (§12.3 rule b/c).
+
 ## Session 2026-09-13-2340 — M2 slice 1: aurora_dom node arena + serialization; handoff file
 - **Milestone:** M2 — HTML to DOM   **WBS items touched:** none tickable yet (§6.6 interface items tick per-interface as the script surface lands)
 - **Implemented:**
