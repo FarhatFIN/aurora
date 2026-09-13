@@ -1,0 +1,118 @@
+FOR-NEXT-AGENT — how to continue this project
+=============================================
+
+You are taking over AURORA: a web browser engine + browser built from
+first principles in Rust, driven by a machine-readable master specification.
+Read this file once, then follow it. It tells you WHERE the truth lives;
+it does not duplicate it.
+
+THE THREE FILES THAT ARE ALWAYS TRUE (in this order)
+----------------------------------------------------
+1. BROWSER_ENGINE_PROMPT.md  (repo root, ~10k lines)
+   The constitution + full technical spec + work breakdown structure (WBS)
+   + milestones. You do NOT read it all. Read:
+   - Part 0 (§0.3: how to consume it), Part 7 (milestones), Part 12
+     (session protocol), the Part 5 section for whatever you touch next,
+     and the exact WBS slice you are working on.
+2. PROGRESS.md  (repo root)
+   The single source of truth for WHERE THE PROJECT IS: current milestone,
+   WBS completion, standing placeholders, debts, decision log, and the
+   session log (newest first). Read its top section FIRST, always.
+3. docs/adr/*.md
+   Architecture decisions. If a decision is not in the master spec, it is
+   here. Append-only, numbered.
+
+THIS FILE (FOR-NEXT-AGENT.txt) is the thin pointer + protocol. Update its
+"CURRENT STATE" block at the end of every working session. If it conflicts
+with PROGRESS.md, PROGRESS.md wins.
+
+SESSION START ROUTINE (§12.2 of the spec — do this every time)
+--------------------------------------------------------------
+1. `git status` — if uncommitted work exists, reconcile it first (§12.5:
+   finish it if small and coherent, or revert and record).
+2. Run the fast tier: `scripts/test-fast.sh`. If it is red, your first task
+   is fixing it. A red baseline invalidates all progress claims.
+3. Read PROGRESS.md top + the last session report: current milestone, next
+   task, debts.
+4. Read the Part 5 spec section for the next task BEFORE writing code
+   (spec-first rule §2.2). The standard (WHATWG/RFC) outranks the doc;
+   this doc outranks your habits.
+5. Go.
+
+TASK SELECTION (§12.3)
+----------------------
+Priority: (a) red fast tier; (b) the current milestone's smallest
+unfinished exit-criteria item (Part 7); (c) the first unchecked WBS item of
+the current milestone in document order — unless the milestone names a
+dependency order. Record the rule letter in the session report.
+
+HOW WORK IS DONE (the loop, §2.1)
+---------------------------------
+pick ONE task -> read spec + existing code -> test first -> smallest correct
+implementation -> run the fast tier -> update PROGRESS.md + WBS -> commit.
+Commits: `area: imperative summary` + why; a commit must be green
+(bisectability is checked: scripts/check-deps.sh + tests must pass).
+
+WBS TICKS (§6.12 — the rules are strict)
+----------------------------------------
+- Ticks happen in tools/generate_wbs.py (the per-section `done` index sets),
+  NEVER by hand-editing BROWSER_ENGINE_PROMPT.md or generated/.
+- Then regenerate: `python3 tools/build_prompt.py` (it runs generate_wbs.py).
+- Tick only what is implemented + tested + reported. Check == verified.
+
+COMMANDS
+--------
+cargo build --workspace          # everything
+scripts/test-fast.sh             # fmt + clippy -D warnings + tests (the gate)
+scripts/test-all.sh              # full tier: + dep policy + WBS regeneration asserts
+cargo run -p aurora_shell -- --version
+./target/debug/aurora --dump-text <url>   # headless fetch tool (M1)
+scripts/check-deps.sh            # §4.3/§3.3 dependency policy (machine-checked)
+scripts/wbs-progress.sh          # WBS progress table (§6.14)
+
+ENVIRONMENT NOTES
+-----------------
+- Rust via distro packages (NO rustup): rustc/cargo 1.95.0, rustfmt 1.9.0,
+  clippy 0.1.95 (installed via `sudo apt install rustfmt rust-clippy`).
+  rust-toolchain.toml is advisory here, binding in CI.
+- Network access is available; tests must NOT use it (§5.2 invariant) —
+  mock servers only. One recorded exception: manual live verification of
+  the M1 exit criterion (documented in PROGRESS.md session log).
+- The user speaks Russian; reply in Russian. Code, docs, and commit
+  messages are English.
+
+HARD BOUNDARIES (do not cross without an ADR)
+---------------------------------------------
+- Language is Rust (§3.1). Dependencies: only crates on the §3.3 approved
+  list, added by the milestone that needs them, with a justification line
+  in the crate's Cargo.toml. scripts/check-deps.sh enforces the map.
+- Engine crates never import the shell; the shell only uses aurora::WebView
+  (eventually). The map is §4.3.
+- New files outside the §11.1 layout need an ADR (this file = ADR-0004).
+- No panic on external input; no unwrap/expect outside tests (§9.6 lint
+  set denies them in non-test code); unsafe only per §9.4.
+
+CURRENT STATE (update me every session)
+---------------------------------------
+- Milestone: M2 — HTML to DOM (started; M1 network slice complete)
+- Done so far: M0 bootstrap (19-crate workspace, lint set, scripts, CI);
+  M1 COMPLETE except UI-dependent stragglers (error page, about:srcdoc —
+  they need the document concept M2 builds): WHATWG URL parser, HTTP/1.1
+  + TLS stack (rustls), runtime fetch dispatch, headless CLI
+  (aurora --dump-bytes/--dump-text), byte-exactness + error-injection
+  suites, TLS failure matrix with committed fixture PKI, --dump-bytes ==
+  curl -sL on five live URLs. M2 slice 1: aurora_dom done — node arena
+  with generational indices + tombstones (§4.5), Document mutation
+  surface (append/insert_before/remove/set_attribute/clone-ready
+  queries), HTML serialization per the WHATWG algorithm (iterative, no
+  recursion; raw-text literal; standard escape sets). 103 tests green.
+- NEXT TASK (be specific): M2 slice 2 — the HTML tokenizer (§5.4) in
+  aurora_html. Read §5.4 + docs/spec-notes/ first; write
+  docs/spec-notes/html-tokenizer.md as you read. Tokenizer states are
+  translated 1:1 from the standard (same rule as the URL parser). Then
+  tree construction (§5.5) and the html5lib-tests adoption (§8.6) —
+  that is M2's exit bar (tokenizer + tree-construction 100%).
+- WBS: 8/2680 ticked (§6.9 items 2–7, 17, 18). No DOM items to tick yet —
+  §6.6 DOM-interface items are claimed by M2/M10 and tick per-interface.
+- Remember: quirks-mode setter was removed as unused (§9.10); aurora_html
+  re-introduces it (or a public variant) when the tree constructor lands.

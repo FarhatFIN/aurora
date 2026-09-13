@@ -27,10 +27,42 @@ None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
 | 1 | Rust 1.95.0 / edition 2024; §9.6 lint set via `[workspace.lints]` (mechanism equivalent of §4.10's per-crate attributes); three-platform CI per §3.5, superseding §7.2's "two-platform" wording | 0001 |
 | 1 | Prompt source (`parts/`, `generated/`, `tools/`) vendored at repo root so WBS ticks follow the §6.12 data-file → regenerate → review discipline | 0002 |
 | 1 | All 19 crates start with zero dependencies (§3.2 Tier 0); dependency edges appear with the milestone that needs them | — |
+| 4 | `FOR-NEXT-AGENT.txt` at repo root: the durable handoff hint for successor sessions/models; CURRENT STATE block refreshed every session; PROGRESS.md stays the state truth | 0004 |
 
 ## Session log
 
 (newest first, §11.4 template)
+
+## Session 2026-09-13-2340 — M2 slice 1: aurora_dom node arena + serialization; handoff file
+- **Milestone:** M2 — HTML to DOM   **WBS items touched:** none tickable yet (§6.6 interface items tick per-interface as the script surface lands)
+- **Implemented:**
+  - `FOR-NEXT-AGENT.txt` (ADR-0004): durable handoff hint for successor
+    sessions/models — pointers to the three sources of truth, session
+    protocol, environment notes, CURRENT STATE block refreshed each session.
+  - `aurora_dom`: the node arena (§4.5) — generational indices with
+    tombstones, logical removal, teardown Drop; the Document mutation
+    surface (`append`/`insert_before`/`remove`/`set_attribute`, cycle
+    prevention, `contains`, `children`, `last_descendant`); HTML
+    serialization per the WHATWG algorithm — iterative (50k-deep tree
+    test, no recursion), raw-text literals, standard escape sets.
+- **Tested:** fast tier — 103 passed / 0 failed (was 95). New: DOM
+  behavior suite (8: tree build + serialize round-trip, attributes with
+  nbsp/quote escaping, raw-text literals, insert_before ordering,
+  remove/reinsert, contains + cycle rejection, fragment/doctype, deep
+  nesting) + the tombstone unit test.
+- **Bench:** n/a
+- **Decisions:** tombstoning applies to detached nodes only (DOM `remove`
+  detaches; teardown/tombstone is the lifetime decision, §4.5). The
+  serializer uses the WHATWG escape sets (&, nbsp, <, > text; &, nbsp, "
+  attributes) — the §5.6 table's attribute column is broader than the
+  standard; the standard wins (§0.4) — flagged as a spec-table
+  discrepancy. RCDATA has no separate serializer set. `set_quirks`
+  removed as unused until the tree constructor needs it (§9.10).
+- **Debts opened/closed:** namespace model for attributes deferred to the
+  foreign-content insertion modes (recorded in `ElementData` docs).
+- **Next task:** §5.4 — the HTML tokenizer in `aurora_html`; states
+  translated 1:1 from the standard; spec notes in
+  `docs/spec-notes/html-tokenizer.md` first (§12.3 rule c).
 
 ## Session 2026-09-13-2230 — M1 hardening: byte-exactness, error injection, TLS matrix; exit criterion met
 - **Milestone:** M1 — Fetch and render text   **WBS items touched:** §6.9 items 17, 18 ticked (evidence below); §5.3 DoD satisfied
