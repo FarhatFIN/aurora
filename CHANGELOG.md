@@ -5,6 +5,10 @@ line; `v0.1.0` is tagged at M13.
 
 ## [0.1.0] — unreleased (M1 in progress)
 
+### Changed (project governance)
+- License set to Apache-2.0 (explicit patent grant; ADR-0005). `LICENSE`
+  added at the repository root.
+
 ### Added (M1 network slice)
 - `aurora_url`: WHATWG URL parser/serializer/origins with round-trip suite.
 - `aurora_net`: HTTP/1.1 client (redirects, keep-alive pool, chunked,

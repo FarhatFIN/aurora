@@ -74,3 +74,8 @@ The engine never imports the shell; the shell reaches the engine only through
 - `docs/` — architecture map, glossary, ADRs, spec-reading notes.
 - `scripts/` — test tiers, dependency policy check, WBS progress report.
 - `.github/workflows/ci.yml` — fast tier on Linux/Windows/macOS; full tier nightly.
+
+## License
+
+Licensed under the Apache License, Version 2.0 ([LICENSE](LICENSE)). Apache-2.0
+carries an explicit patent grant (§3) — the project's chosen license.

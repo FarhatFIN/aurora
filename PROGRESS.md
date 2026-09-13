@@ -27,6 +27,7 @@ None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
 | 1 | Rust 1.95.0 / edition 2024; §9.6 lint set via `[workspace.lints]` (mechanism equivalent of §4.10's per-crate attributes); three-platform CI per §3.5, superseding §7.2's "two-platform" wording | 0001 |
 | 1 | Prompt source (`parts/`, `generated/`, `tools/`) vendored at repo root so WBS ticks follow the §6.12 data-file → regenerate → review discipline | 0002 |
 | 1 | All 19 crates start with zero dependencies (§3.2 Tier 0); dependency edges appear with the milestone that needs them | — |
+| 5 | License: Apache-2.0 (explicit patent grant, §3); MIT option dropped from the M0 placeholder `MIT OR Apache-2.0` | 0005 |
 | 4 | `FOR-NEXT-AGENT.txt` at repo root: the durable handoff hint for successor sessions/models; CURRENT STATE block refreshed every session; PROGRESS.md stays the state truth | 0004 |
 
 ## Session log

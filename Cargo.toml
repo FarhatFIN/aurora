@@ -21,7 +21,7 @@ members = ["crates/*", "apps/*"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 
 # The §9.6 lint set, declared once here and inherited by every member via
 # `[lints] workspace = true`. This is the workspace-level equivalent of the
