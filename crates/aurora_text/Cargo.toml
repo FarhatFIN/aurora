@@ -1,0 +1,14 @@
+[package]
+name = "aurora_text"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Fonts, shaping, line breaking, bidi (§5.11)"
+publish = false
+
+# Tier 0 logic over Tier 1 shaping/fonts (§3.3) from M7.
+# Zero dependencies at M0; §3.3 Tier 1 additions require the milestone that
+# needs them plus a one-line justification here.
+
+[lints]
+workspace = true

@@ -1,0 +1,5 @@
+# Build outputs (§11.3: no machine-specific artifacts in version control).
+/target
+
+# Resumable outputs of long computations: corpus runs, fuzz campaigns (§12.4).
+/test-output

@@ -1,0 +1,18 @@
+[package]
+name = "aurora_shell"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The AURORA browser application: window, tabs, omnibox, downloads, prefs UI."
+publish = false
+
+# Application crate on top of the engine (§4.3): depends on aurora_runtime,
+# aurora_paint, aurora_platform, aurora_ipc — nothing else. Engine crates must
+# never depend on this package; scripts/check-deps.sh enforces that boundary
+# (§7.2 exit criterion).
+#
+# Zero dependencies at M0; Tier 1 additions (winit, softbuffer) land with M6
+# and carry their §3.3 justification at that point.
+
+[lints]
+workspace = true

@@ -1,0 +1,14 @@
+[package]
+name = "aurora_css"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "CSS tokenizer, parser, selectors AST, values (§5.7)"
+publish = false
+
+# Tier 0 — owned (§3.2). Never touches the DOM; resolves no cascade.
+# Zero dependencies at M0; §3.3 Tier 1 additions require the milestone that
+# needs them plus a one-line justification here.
+
+[lints]
+workspace = true

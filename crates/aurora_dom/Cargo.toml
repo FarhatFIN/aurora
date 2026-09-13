@@ -1,0 +1,14 @@
+[package]
+name = "aurora_dom"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "DOM core: node arena, Document/Element, events (§5.6)"
+publish = false
+
+# Tier 0 — owned (§3.2). Parsing and cascade are hosted here, implemented elsewhere.
+# Zero dependencies at M0; §3.3 Tier 1 additions require the milestone that
+# needs them plus a one-line justification here.
+
+[lints]
+workspace = true

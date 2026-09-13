@@ -1,0 +1,45 @@
+# AURORA — a web browser engine and browser built from first principles.
+# Master specification: BROWSER_ENGINE_PROMPT.md (repo root).
+# Progress ledger: PROGRESS.md (repo root).
+#
+# Dependency tier policy (§3.2):
+#   Tier 0 — owned: every crate in this workspace carries ZERO dependencies at
+#     M0. All web-platform semantics (URL, HTTP, HTML, CSS, JS, DOM, layout,
+#     paint, storage) are written in this repository, never imported.
+#   Tier 1 — approved infrastructure: only crates on the §3.3 list, each with a
+#     one-line justification in the member's Cargo.toml, added no earlier than
+#     the milestone that first needs them.
+#   Tier 2 — exceptional: requires an ADR and a removal plan; never reachable
+#     from the engine's public API types.
+# The machine-checked enforcement of this policy and of the §4.3 crate
+# dependency rules lives in scripts/check-deps.sh (§8.8).
+
+[workspace]
+resolver = "2"
+members = ["crates/*", "apps/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+# The §9.6 lint set, declared once here and inherited by every member via
+# `[lints] workspace = true`. This is the workspace-level equivalent of the
+# per-crate lib attribute block in §4.10 — same set, single source of truth
+# (see ADR-0001). Pedantic warnings become errors in CI via `-D warnings`.
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+correctness = "deny"
+suspicious = "deny"
+perf = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+todo = "deny"
+unimplemented = "deny"
+panic_in_result_fn = "deny"
+float_cmp = "deny"
+missing_safety_doc = "deny"

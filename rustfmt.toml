@@ -1,0 +1,4 @@
+# Committed in M0 (§3.4). Kept near-default: only deliberate choices belong
+# here, and every option must be stable-channel (no nightly-only keys).
+edition = "2024"
+max_width = 100

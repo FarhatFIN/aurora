@@ -1,0 +1,5 @@
+# MSRV pinned at project start (§3.4): the current stable toolchain.
+# NOTE (recorded in ADR-0001): this machine uses distro-packaged Rust without
+# rustup, so this file is advisory here and binding where rustup is present.
+[toolchain]
+channel = "1.95.0"

@@ -1,0 +1,4 @@
+# §9.6 — the full set lives in [workspace.lints] of the root Cargo.toml;
+# this file carries the clippy configuration knobs.
+cognitive-complexity-threshold = 40
+too-many-arguments-threshold = 10
