@@ -33,6 +33,36 @@ None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
 
 (newest first, §11.4 template)
 
+## Session 2026-09-14-0130 — M2 slice 2: the §13.4 tokenizer complete, 21 tests green
+- **Milestone:** M2 — HTML to DOM   **WBS items touched:** none tickable yet (html5lib adoption is the tick bar)
+- **Implemented:**
+  - `aurora_html::Tokenizer` (public per the §5.4 sketch): the full §13.4
+    state machine — data/rcdata/rawtext/script-data/plaintext, tags,
+    attributes, comments, DOCTYPEs, CDATA routing, character references.
+    Parse errors collected by the standard's codes; token emission via
+    character runs; start-tag attribute dedupe (first wins).
+  - Verified-against-spec subtleties pinned by tests: AttributeName '='
+    goes straight to the value state (§13.2.5.33 — my first draft had it
+    wrong and the trace caught it); EscapedLessThanSign RECONSUMES the
+    first alpha (§13.2.5.23); the '/' of a double-escaped </script> is
+    consumed silently (§13.2.5.30) — why it cannot close the element;
+    AfterDoctypePublicIdentifier takes a SECOND QUOTED STRING, no SYSTEM
+    keyword; &notit; → ¬ + parse error outside attributes.
+- **Tested:** fast tier — 124 passed / 0 failed (was 103). New: 21
+  tokenizer/reference unit tests covering markup, hostile comments
+  (nested `<!--` shapes), all doctype variants incl. abrupt identifiers,
+  the double-escape dance, EOF recovery (eof-in-tag drops, eof-in-comment
+  emits), NUL/CRLF handling, legacy references. clippy -D warnings clean.
+- **Bench:** n/a
+- **Decisions:** Character runs from the start (sketch-permitted);
+  generated entities table committed for hermetic CI; Tokenizer made
+  public per the sketch (was pub(crate) — dead-code in non-test builds
+  forced the facade decision, which the sketch itself mandates).
+- **Debts opened/closed:** `set_allow_cdata` removed as unused — re-add
+  with the foreign-content insertion modes (noted in FOR-NEXT-AGENT.txt).
+- **Next task:** §5.5 — tree construction (`tree_builder.rs`) over the
+  Token stream into aurora_dom; then html5lib-tests adoption (§12.3 b/c).
+
 ## Session 2026-09-14-0030 — M2 slice 2 in flight: tokenizer prerequisites, entities table
 - **Milestone:** M2 — HTML to DOM   **WBS items touched:** none ticked yet (tokenizer not complete)
 - **Implemented:**

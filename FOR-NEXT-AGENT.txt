@@ -106,28 +106,20 @@ CURRENT STATE (update me every session)
   surface (append/insert_before/remove/set_attribute/clone-ready
   queries), HTML serialization per the WHATWG algorithm (iterative, no
   recursion; raw-text literal; standard escape sets). 103 tests green.
-- IN FLIGHT (untracked WIP in the working tree — git status shows it):
-  crates/aurora_html/src/{token.rs, cursor.rs, reference.rs} — the
-  tokenizer's prerequisites, complete and unit-tested (reference.rs has
-  in-module tests; run `cargo test -p aurora_html --lib` AFTER wiring the
-  modules into lib.rs). token.rs: Token/Attribute/InitialState/
-  TokenizerOptions + the full ~70-state State enum. cursor.rs: input
-  cursor with CR/LF preprocessing and push-back for reprocessing.
-  reference.rs: named (longest match over NAMED_REFERENCES) + numeric
-  character references with the windows-1252 remap; legacy
-  no-semicolon-vs-attribute ambiguity handled; Outcome::FlushBuffer means
-  "the & is literal — reprocess".
-- NEXT TASK (be specific): write crates/aurora_html/src/tokenizer.rs —
-  the §13.4 state machine over token.rs's State enum, one match arm per
-  standard state (the URL parser in crates/aurora_url/src/parser.rs is
-  the worked example of the same discipline). Design settled: the
-  tokenizer accumulates a character run, flushes it before emitting any
-  tag/comment/doctype token; on emit, dedupe start-tag attributes
-  (duplicate-attribute parse error). Then add `mod token; mod cursor;
-  mod reference; mod tokenizer;` to lib.rs, run the unit tests, and
-  proceed to tree construction (§5.5) + html5lib-tests adoption (§8.6) —
-  M2's exit bar. The §5.4 sketch's Character(char) is superseded by the
-  permitted Character(String) run variant (same session decision).
+- IN FLIGHT: nothing — the working tree is clean.
+- NEXT TASK (be specific): §5.5 tree construction in aurora_html
+  (`tree_builder.rs`): insertion modes over the tokenizer's Token stream
+  (aurora_html::Tokenizer is public; Token::StartTag/EndTag/Comment/
+  Character/Doctype), filling aurora_dom's Document (append/
+  insert_before per the "appropriate place to insert"), the foreign-
+  content flag drives Tokenizer::set_allow_cdata — re-add that method
+  (removed as unused, §9.10) when the foreign-content insertion modes
+  land. Then adopt html5lib-tests (tokenizer/ + tree-construction/) per
+  §8.6 — M2's exit bar. Known spec subtleties already pinned by
+  tokenizer tests: AttributeName '=' → straight to the value state;
+  EscapedLessThanSign RECONSUMES the first alpha; the '/' of a
+  double-escaped </script> is silent; AfterDoctypePublicIdentifier
+  accepts a second quoted string WITHOUT a SYSTEM keyword.
 - WBS: 8/2680 ticked (§6.9 items 2–7, 17, 18). No DOM items to tick yet —
   §6.6 DOM-interface items are claimed by M2/M10 and tick per-interface.
 - Remember: quirks-mode setter was removed as unused (§9.10); aurora_html
