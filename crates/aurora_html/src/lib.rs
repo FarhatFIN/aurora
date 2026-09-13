@@ -7,7 +7,11 @@
 //! the public API surface of this crate is exactly what `src/facade.rs`
 //! re-exports (§4.10).
 
+mod cursor;
 mod facade;
+mod reference;
 mod tables;
+mod token;
+mod tokenizer;
 
 pub use facade::*;

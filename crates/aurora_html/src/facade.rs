@@ -5,3 +5,5 @@
 //! part of the crate's data surface.
 
 pub use crate::tables::NAMED_REFERENCES;
+pub use crate::token::{Attribute, InitialState, Token, TokenizerOptions};
+pub use crate::tokenizer::Tokenizer;
