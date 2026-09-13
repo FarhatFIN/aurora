@@ -58,6 +58,8 @@ None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
   crate; bin test in `aurora_shell`); `cargo fmt --check` clean;
   `cargo clippy --workspace --all-targets -- -D warnings` clean;
   `scripts/check-deps.sh` OK; `scripts/wbs-progress.sh` reports 2,680 open / 0 done.
+- **Demo (§7.2, verified at HEAD):** `cargo run -p aurora_shell -- --version`
+  → `aurora-shell 0.1.0 (commit 2ccc011)`
 - **Bench:** n/a (no benchmarks exist yet; §10.1 table lands with first benches)
 - **Decisions:** see decision log above (ADR-0001, ADR-0002).
 - **Debts opened/closed:** none. Environment note: rustfmt/clippy installed via
