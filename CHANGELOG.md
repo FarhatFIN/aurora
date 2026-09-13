@@ -3,6 +3,17 @@
 All notable changes per milestone exit (§11.6). Releases are tags on the main
 line; `v0.1.0` is tagged at M13.
 
+## [0.1.0] — unreleased (M1 in progress)
+
+### Added (M1 network slice)
+- `aurora_url`: WHATWG URL parser/serializer/origins with round-trip suite.
+- `aurora_net`: HTTP/1.1 client (redirects, keep-alive pool, chunked,
+  gzip/deflate, per-phase timeouts, cancellation), TLS via rustls.
+- `aurora_encoding`: UTF-8 + windows-1252 text decoding.
+- `aurora_runtime`: fetch entry point with scheme dispatch (http/https/
+  file/data/about:blank).
+- `aurora` headless CLI: `--url`, `--dump-bytes`, `--dump-text`.
+
 ## [0.1.0] — unreleased (M0)
 
 ### Added

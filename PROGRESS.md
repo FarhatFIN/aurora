@@ -32,6 +32,45 @@ None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
 
 (newest first, §11.4 template)
 
+## Session 2026-09-13-2100 — M1 network slice: URL parser + HTTP/1.1 + TLS, 6 WBS ticks
+- **Milestone:** M1 — Fetch and render text   **WBS items touched:** §6.9 items 2–7 ticked; item 1 partial (about:srcdoc + error page remain)
+- **Implemented:**
+  - `aurora_url`: full WHATWG basic URL parser translated step-for-step from
+    the living standard (states, host/IPv4/IPv6 parsers+serializers, file
+    quirks, percent-encode sets), serialization, relative resolution, origins,
+    form-urlencode. Parsing is total; round-trip suite green.
+  - `aurora_net`: injection-proof `HeaderMap`; own chunked decoder;
+    content-length/until-close framing; gzip/deflate via `flate2` (§6.9 item 7
+    permits it); redirect chains (301–303 → GET, 307/308 preserved, 20-hop cap,
+    cross-origin credential stripping); per-origin keep-alive pool (6 conns,
+    60 s idle) with one clean retry on a stale pooled connection; per-phase
+    timeouts; shared `CancelToken`. TLS 1.2/1.3 via `rustls`(ring) +
+    `webpki-roots` (§3.3); ALPN http/1.1; no click-through (§5.3).
+  - `aurora_encoding`: UTF-8 (lossy) + windows-1252 decode; charset labels.
+  - `aurora_runtime`: fetch entry point with scheme dispatch (http/https/
+    file/data/about:blank; unknown → UnsupportedScheme), owned base64.
+  - `aurora` bin: `--url/--dump-bytes/--dump-text/--version` (§7.3 demo).
+- **Tested:** fast tier — 83 passed / 0 failed (was 19). New: URL behavior +
+  round-trip suites (18), host unit tests, mock-server suite (10: framing,
+  gzip golden, redirect chain, keep-alive reuse, stale-connection retry,
+  HEAD, obs-fold, hostile heads), scheme tests (7), chunked/headers unit
+  tests. `check-deps` OK. Full tier green.
+  Verified live: `aurora --dump-text https://example.com/` renders via the
+  real DNS→TCP→TLS→HTTP path; data:/file:/about:/unknown schemes verified.
+- **Bench:** n/a
+- **Decisions:** bare-LF header terminators accepted (robustness), bare-LF in
+  chunked framing rejected (RFC-strict) — recorded in code + PROGRESS.md.
+  Response bodies buffered in M1 (framing reader is the streaming seam).
+  ADR-0003: `aurora_runtime` gains `aurora_url`/`aurora_encoding` edges; the
+  headless binary lives in the `aurora` package as a bin target using only
+  the facade.
+- **Debts opened/closed:** see Debts above (TLS matrix, 307/308 tests,
+  console note, fuzz targets, byte-exactness curl criterion).
+- **Next task:** §6.9 item 18 — byte-exactness request tests + the M1 exit
+  criterion (`--dump-bytes` vs `curl -s` on five URLs), then mock-server
+  delays/truncations (§6.9 item 17); §12.3 rule b (smallest unfinished M1
+  exit-criteria item).
+
 ## Session 2026-09-13-1900 — M0 bootstrap: workspace, lint set, scripts, CI
 - **Milestone:** M0 — Bootstrap and toolchain   **WBS items touched:** none (M0 is infrastructure only, §6.13)
 - **Implemented:**
