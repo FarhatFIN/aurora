@@ -32,6 +32,45 @@ None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
 
 (newest first, §11.4 template)
 
+## Session 2026-09-13-2230 — M1 hardening: byte-exactness, error injection, TLS matrix; exit criterion met
+- **Milestone:** M1 — Fetch and render text   **WBS items touched:** §6.9 items 17, 18 ticked (evidence below); §5.3 DoD satisfied
+- **Implemented:**
+  - Byte-exactness: the emitted request head is compared byte-for-byte
+    against `tests/golden/net/request-head.txt` (§8.3; `{port}` substituted).
+  - Error injection (§6.9 items 17/24 subset): truncation mid-head,
+    truncation mid-content-length, invalid chunk size, premature close
+    mid-chunked — all surface typed `NetError::Protocol`, no panics; plus a
+    scripted-delay test. The chunked decoder now distinguishes "incomplete"
+    (`Ok(None)`) from "invalid" (`Err`) — a real conflation bug the
+    truncation tests exposed and fixed.
+  - TLS (§5.3 DoD): `Pool::with_root_certs` for test/`--cert-bundle` trust
+    overrides; committed throwaway fixture PKI (`tests/fixtures/tls/`);
+    in-process rustls TLS server; the four-case matrix — good chain serves,
+    expired → `Tls("certificate expired")`, wrong host → `Tls("hostname
+    mismatch")`, untrusted root → `Tls("untrusted certificate authority")`.
+    Handshake driver rewritten (`read_tls`/`write_tls` + typed
+    `process_new_packets`) so verification failures surface exactly.
+- **Tested:** fast tier — 95 passed / 0 failed (was 83). New: golden
+  byte-exactness (1), error injection + delay (5), TLS matrix (5), chunked
+  incomplete-vs-invalid unit cases. clippy `-D warnings` clean.
+  **Demo (§11.5, M1 exit criterion):** `aurora --dump-bytes` vs
+  `curl -sL` — byte-identical (cmp) on: http://example.com/ (559 B),
+  https://example.com/ (559 B), https://www.rfc-editor.org/rfc/rfc2324.txt
+  (19 610 B), https://www.iana.org/help/example-domains (6 639 B),
+  http://info.cern.ch/ (646 B). neverssl.com was down from this network
+  (curl also failed) and was replaced by info.cern.ch — recorded per §11.5.
+- **Bench:** n/a
+- **Decisions:** chunked "incomplete vs invalid" split; trust-store override
+  lives on `Pool` (the connection factory) rather than `Request`;
+  test-only fixture PKI committed with regeneration notes
+  (`docs/spec-notes/tls.md`).
+- **Debts opened/closed:** TLS matrix debt CLOSED; byte-exactness exit
+  criterion CLOSED; item-15 configurable-deadline debt OPEN (see Debts).
+- **Next task:** §5.4/§5.5 — begin M2: the HTML tokenizer
+  (`aurora_html`), the first subsystem of Part 5's document pipeline
+  (§12.3 rule c; M1's remaining items — error page UI, about:srcdoc —
+  need the document concept M2 builds).
+
 ## Session 2026-09-13-2100 — M1 network slice: URL parser + HTTP/1.1 + TLS, 6 WBS ticks
 - **Milestone:** M1 — Fetch and render text   **WBS items touched:** §6.9 items 2–7 ticked; item 1 partial (about:srcdoc + error page remain)
 - **Implemented:**

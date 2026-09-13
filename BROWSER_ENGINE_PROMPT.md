@@ -7983,8 +7983,8 @@ Loader-level behaviors (§5.1–§5.3); each item carries a mock-server test.
 - [ ] Content sniffing table for images and top-level text/html/text/plain ambiguity; nosniff honored.
 - [ ] Timeout matrix per phase; abort mid-body surfaces a clean network error to the pipeline.
 - [ ] HTTP/1.1 protocol violations mapped to NetError::Protocol with the offending bytes logged (debug).
-- [ ] Mock-server harness: per-test server with scripted responses, delays, and truncations (§8.2).
-- [ ] Byte-exactness tests: emitted request lines/headers match the recorded golden bytes.
+- [x] Mock-server harness: per-test server with scripted responses, delays, and truncations (§8.2).
+- [x] Byte-exactness tests: emitted request lines/headers match the recorded golden bytes.
 - [ ] WebSocket handshake + frame codecs (client side) with the event surface of §6.6.
 - [ ] Non-GET methods (POST/PUT/DELETE/HEAD/OPTIONS) for fetch with body framing rules.
 - [ ] DNS resolution with TTL caching and the hosts-file override for tests.

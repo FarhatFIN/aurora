@@ -130,12 +130,17 @@ pub fn read_body(
             Ok(body)
         }
         Framing::Chunked => {
-            // Accumulate until the chunked decoder sees the terminator.
+            // The decoder distinguishes "incomplete" (read more) from
+            // "invalid" (protocol error); EOF mid-frame is an error.
             loop {
                 cancel.check()?;
-                if let Ok((decoded, used)) = chunked::decode(leftover) {
-                    leftover.drain(..used);
-                    return Ok(decoded);
+                match chunked::decode(leftover) {
+                    Ok(Some((decoded, used))) => {
+                        leftover.drain(..used);
+                        return Ok(decoded);
+                    }
+                    Ok(None) => {}
+                    Err(error) => return Err(error),
                 }
                 let mut buf = [0u8; 16 * 1024];
                 let read = stream.fill(&mut buf)?;

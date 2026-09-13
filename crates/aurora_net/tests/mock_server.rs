@@ -324,3 +324,138 @@ fn ob_fold_is_rejected() {
     let response = fetch(&Pool::new(), &get(&server.url("/")), &CancelToken::new());
     assert!(matches!(response, Err(aurora_net::NetError::Protocol(_))));
 }
+
+// ---- byte-exactness (§6.9 item 18) and error injection (§6.9 item 24) ----
+
+/// Reads the request head bytes exactly as the peer sent them (no
+/// normalization): up to and including the blank line.
+fn read_request_bytes(stream: &mut TcpStream) -> Vec<u8> {
+    let mut buffer = Vec::new();
+    let mut byte = [0u8; 1];
+    while !buffer.ends_with(b"\r\n\r\n") {
+        if stream.read(&mut byte).unwrap_or(0) == 0 {
+            break;
+        }
+        buffer.push(byte[0]);
+    }
+    buffer
+}
+
+#[test]
+fn request_head_matches_recorded_golden_bytes() {
+    use std::sync::Mutex;
+    // §8.3: the golden file records the exact wire bytes; `{port}` is
+    // substituted because a loopback port is machine state, not behavior.
+    let captured: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&captured);
+    let server = MockServer::spawn(Arc::new(move |stream| {
+        let head = read_request_bytes(stream);
+        sink.lock().unwrap().clone_from(&head);
+        respond(stream, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n", b"");
+    }));
+    let response = fetch(
+        &Pool::new(),
+        &get(&server.url("/golden?q=1")),
+        &CancelToken::new(),
+    )
+    .unwrap();
+    assert_eq!(response.status, 200);
+
+    let golden_path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/golden/net/request-head.txt"
+    );
+    let golden = std::fs::read_to_string(golden_path).unwrap();
+    let expected = golden.replace("{port}", &server.port.to_string());
+    let actual = String::from_utf8(captured.lock().unwrap().clone()).unwrap();
+    assert_eq!(
+        actual, expected,
+        "request head must match the recorded golden bytes"
+    );
+}
+
+#[test]
+fn connection_closed_mid_head_is_a_clean_protocol_error() {
+    let server = MockServer::spawn(Arc::new(|stream| {
+        // Truncation: half a status line, then the socket dies.
+        stream.write_all(b"HTTP/1.1 20").unwrap();
+        stream.flush().unwrap();
+        stream.shutdown(std::net::Shutdown::Both).unwrap();
+    }));
+    let response = fetch(&Pool::new(), &get(&server.url("/")), &CancelToken::new());
+    assert_eq!(
+        response.unwrap_err(),
+        aurora_net::NetError::Protocol("connection closed before head completed")
+    );
+}
+
+#[test]
+fn connection_closed_mid_body_is_a_clean_protocol_error() {
+    let server = MockServer::spawn(Arc::new(|stream| {
+        read_request(stream);
+        // Truncation: content-length promises 10 bytes, 3 arrive.
+        respond(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n",
+            b"abc",
+        );
+        stream.shutdown(std::net::Shutdown::Both).unwrap();
+    }));
+    let response = fetch(&Pool::new(), &get(&server.url("/")), &CancelToken::new());
+    assert_eq!(
+        response.unwrap_err(),
+        aurora_net::NetError::Protocol("connection closed before content-length")
+    );
+}
+
+#[test]
+fn invalid_chunk_size_is_a_clean_protocol_error() {
+    let server = MockServer::spawn(Arc::new(|stream| {
+        read_request(stream);
+        respond(
+            stream,
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n",
+            b"zz\r\nabc\r\n0\r\n\r\n",
+        );
+    }));
+    let response = fetch(&Pool::new(), &get(&server.url("/")), &CancelToken::new());
+    assert_eq!(
+        response.unwrap_err(),
+        aurora_net::NetError::Protocol("chunked: bad chunk size")
+    );
+}
+
+#[test]
+fn premature_close_mid_chunked_body_is_a_clean_protocol_error() {
+    let server = MockServer::spawn(Arc::new(|stream| {
+        read_request(stream);
+        respond(
+            stream,
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n",
+            b"5\r\nhello\r\n",
+        );
+        stream.shutdown(std::net::Shutdown::Both).unwrap();
+    }));
+    let response = fetch(&Pool::new(), &get(&server.url("/")), &CancelToken::new());
+    assert_eq!(
+        response.unwrap_err(),
+        aurora_net::NetError::Protocol("connection closed mid-chunked-body")
+    );
+}
+
+#[test]
+fn delayed_response_within_the_header_deadline_succeeds() {
+    let server = MockServer::spawn(Arc::new(|stream| {
+        read_request(stream);
+        // Delay (§6.9 item 17: the harness scripts delays) well inside the
+        // 30 s header deadline, then respond normally.
+        std::thread::sleep(std::time::Duration::from_millis(150));
+        respond(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n",
+            b"ok",
+        );
+    }));
+    let response = fetch(&Pool::new(), &get(&server.url("/")), &CancelToken::new()).unwrap();
+    assert_eq!(response.body, b"ok".to_vec());
+}

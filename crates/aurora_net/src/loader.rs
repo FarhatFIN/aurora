@@ -157,7 +157,7 @@ impl Exchange<'_> {
                 self.reused = true;
                 connection
             }
-            None => conn::connect(&url, self.cancel)?,
+            None => conn::connect(&url, self.cancel, &self.pool.tls_config)?,
         };
         let outcome = self.exchange_over(&mut connection)?;
         if outcome.keep_alive {

@@ -13,6 +13,13 @@ line; `v0.1.0` is tagged at M13.
 - `aurora_runtime`: fetch entry point with scheme dispatch (http/https/
   file/data/about:blank).
 - `aurora` headless CLI: `--url`, `--dump-bytes`, `--dump-text`.
+- TLS: webpki-roots default, `Pool::with_root_certs` override; certificate-
+  failure matrix tests with a committed test PKI (§5.3 DoD).
+- Mock harness: scripted delays and truncations; byte-exact request-head
+  golden test; error-injection suite (truncation, bad chunk size,
+  premature close) — all typed protocol errors, no panics.
+- M1 exit criterion verified: `--dump-bytes` byte-identical to `curl -sL`
+  on five test URLs.
 
 ## [0.1.0] — unreleased (M0)
 

@@ -21,7 +21,9 @@ webpki-roots = "1"
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 
 [dev-dependencies]
-# none yet: the mock server harness uses std::net only.
+# rustls-pemfile: §3.3-approved companion of rustls; parses the committed
+# test-fixture PEMs in the TLS matrix tests.
+rustls-pemfile = "2"
 
 [lints]
 workspace = true

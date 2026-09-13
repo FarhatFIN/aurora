@@ -296,6 +296,8 @@ def gen_network(out: list[str]) -> None:
         4,  # Keep-alive pooling + one clean retry (M1)
         5,  # Chunked / content-length / until-close framing (M1)
         6,  # gzip/deflate via the approved crate (M1)
+        16, # Mock-server harness with delays and truncations (M1)
+        17, # Byte-exactness tests vs the recorded golden head (M1)
     }
     for index, it in enumerate(items):
         mark = "x" if index in done else " "
