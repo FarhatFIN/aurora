@@ -7968,12 +7968,12 @@ integration test with the scripted input driver (§8.4).
 Loader-level behaviors (§5.1–§5.3); each item carries a mock-server test.
 
 - [ ] Scheme handling: `http`, `https`, `file`, `data`, `about:blank`, `about:srcdoc`; unknown scheme → error page.
-- [ ] URL normalization before fetch; fragment stripped on the wire; base resolution for every subresource.
-- [ ] GET pipeline end-to-end: DNS → connect → TLS → request → response, all phases cancelable (§5.2.5).
-- [ ] Redirect chain semantics (301/302/303/307/308) including body dropping and method preservation.
-- [ ] Keep-alive pooling with idle expiry; connection error → one clean retry on a fresh connection.
-- [ ] Chunked body decoding; content-length framing; until-close fallback with a console note.
-- [ ] gzip/deflate content decoding (owned inflate, or the approved crate until it lands).
+- [x] URL normalization before fetch; fragment stripped on the wire; base resolution for every subresource.
+- [x] GET pipeline end-to-end: DNS → connect → TLS → request → response, all phases cancelable (§5.2.5).
+- [x] Redirect chain semantics (301/302/303/307/308) including body dropping and method preservation.
+- [x] Keep-alive pooling with idle expiry; connection error → one clean retry on a fresh connection.
+- [x] Chunked body decoding; content-length framing; until-close fallback with a console note.
+- [x] gzip/deflate content decoding (owned inflate, or the approved crate until it lands).
 - [ ] Conditional revalidation flow (ETag + Last-Modified) against the disk cache.
 - [ ] Vary-keyed cache entries; no-store honored; stale-while-revalidate treated as stale (documented).
 - [ ] Cookie jar read/write on send/response with SameSite + Secure rules (§5.17.1).

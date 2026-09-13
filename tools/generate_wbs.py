@@ -286,8 +286,20 @@ def gen_network(out: list[str]) -> None:
         "Integrity metadata (SRI) verification for scripts/styles with failure = network error.",
         "DevTools network event emission for every request lifecycle transition (§5.19.5).",
     ]
-    for it in items:
-        out.append(f"- [ ] {it}")
+    # Ticked items (§6.12 rule 1: verified code + green tests + session-log
+    # entry). Kept here as indices into `items` so the data stays single-
+    # sourced; PROGRESS.md's session log records the evidence per item.
+    done = {
+        1,  # URL normalization; fragment stripped; base resolution (M1)
+        2,  # GET pipeline end-to-end incl. TLS; phases cancelable (M1)
+        3,  # Redirect chain semantics for the M1 method set (M1)
+        4,  # Keep-alive pooling + one clean retry (M1)
+        5,  # Chunked / content-length / until-close framing (M1)
+        6,  # gzip/deflate via the approved crate (M1)
+    }
+    for index, it in enumerate(items):
+        mark = "x" if index in done else " "
+        out.append(f"- [{mark}] {it}")
     out.append("")
 
 
