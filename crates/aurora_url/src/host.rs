@@ -402,6 +402,14 @@ pub fn serialize(host: &Host) -> String {
     }
 }
 
+impl Host {
+    /// Serializes the host (URL Standard §3 "host serializer").
+    #[must_use]
+    pub fn serialize(&self) -> String {
+        serialize(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

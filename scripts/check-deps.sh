@@ -19,7 +19,7 @@ allowed_deps() {
         aurora_text)     echo "aurora_platform" ;;
         aurora_layout)   echo "aurora_style aurora_text aurora_dom" ;;
         aurora_paint)    echo "aurora_layout aurora_text aurora_image" ;;
-        aurora_runtime)  echo "aurora_js aurora_dom aurora_net aurora_style aurora_layout aurora_paint" ;;
+        aurora_runtime)  echo "aurora_js aurora_dom aurora_net aurora_style aurora_layout aurora_paint aurora_url aurora_encoding" ;;
         aurora_storage)  echo "aurora_net aurora_platform" ;;
         aurora_security) echo "aurora_url" ;;
         aurora_platform) ;;

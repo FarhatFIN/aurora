@@ -3,12 +3,14 @@ name = "aurora_runtime"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Event loop, timers, host bindings, console (§5.15)"
+description = "Event loop, timers, host bindings, console, fetch API (§5.15)"
 publish = false
 
-# Tier 0 — owned (§3.2). Owns the JS↔DOM binding layer (§4.3 bridge rule).
-# Zero dependencies at M0; §3.3 Tier 1 additions require the milestone that
-# needs them plus a one-line justification here.
+# Tier 0 — owned (§3.2). Fetch-API, event loop, and bindings are written here.
+[dependencies]
+aurora_net = { path = "../aurora_net" }
+aurora_url = { path = "../aurora_url" }
+aurora_encoding = { path = "../aurora_encoding" }
 
 [lints]
 workspace = true
