@@ -1,0 +1,165 @@
+## Table of Contents
+
+- **PART 0 — How to Use This Prompt**
+  - §0.1 What this document is
+  - §0.2 Who it is for
+  - §0.3 How to consume 10,000 lines without drowning
+  - §0.4 Precedence and conflict resolution
+- **PART 1 — Mission, Role & Scope**
+  - §1.1 Identity and product definition
+  - §1.2 What "from scratch" means here
+  - §1.3 Product scope
+  - §1.4 Non-goals (read twice)
+  - §1.5 Stretch goals, explicitly deferred
+  - §1.6 Definition of success
+- **PART 2 — Operating Principles & Working Method**
+  - §2.1 The engineering loop
+  - §2.2 The spec-first rule
+  - §2.3 Vertical slices over horizontal layers
+  - §2.4 Testing discipline
+  - §2.5 Autonomy and escalation
+  - §2.6 The complexity budget
+  - §2.7 Honesty about hacks
+  - §2.8 Idempotence and recoverability
+  - §2.9 Session reporting contract
+  - §2.10 Worked example: the loop applied
+- **PART 3 — Technology Policy**
+  - §3.1 Primary language and rationale
+  - §3.2 The tiered dependency policy
+  - §3.3 Approved dependency list
+  - §3.4 Build system and toolchain
+  - §3.5 Platform targets
+  - §3.6 Graphics backend strategy
+  - §3.7 Concurrency model
+- **PART 4 — System Architecture**
+  - §4.1 The ten-thousand-foot view
+  - §4.2 The pipeline: data flow from URL to pixels
+  - §4.3 Workspace and crate map
+  - §4.4 Threading and synchronization model
+  - §4.5 Memory strategy and ownership across the pipeline
+  - §4.6 Error taxonomy
+  - §4.7 Process model roadmap (single-process today, multi-process tomorrow)
+  - §4.8 Compatibility and versioning policy
+  - §4.9 Architecture Decision Records (ADRs)
+  - §4.10 Crate skeleton template
+- **PART 5 — Subsystem Specifications**
+  - §5.1 URL parsing and normalization
+  - §5.2 HTTP network stack
+  - §5.3 TLS and certificate policy
+  - §5.4 The HTML tokenizer
+  - §5.5 HTML tree construction
+  - §5.6 DOM core and events
+  - §5.7 CSS tokenizer and parser
+  - §5.8 Selectors, cascade, and computed values
+  - §5.9 Layout I — boxes, block, and inline formatting
+  - §5.10 Layout II — flexbox and grid
+  - §5.11 Text, fonts, and shaping
+  - §5.12 Images and decoders
+  - §5.13 JavaScript — lexer and parser
+  - §5.14 JavaScript — interpreter, GC, and builtins
+  - §5.15 Runtime — event loop, timers, and bindings
+  - §5.16 Painting and compositing
+  - §5.17 Storage and persistence
+  - §5.18 The security model
+  - §5.19 Browser shell and DevTools
+    - §5.19.7 Chrome widget specifications
+- **PART 6 — Work Breakdown Structure (WBS)**
+  - §6.1 How to read and use the WBS
+  - §6.2 HTML element checklist
+  - §6.3 CSS property checklist
+  - §6.4 CSS at-rules checklist
+  - §6.5 Selector engine checklist
+  - §6.6 DOM interface checklist
+  - §6.7 JavaScript builtin checklist
+  - §6.8 DOM event catalog
+  - §6.9 Network and protocol checklist
+  - §6.10 Storage and persistence checklist
+  - §6.11 Keyboard and input map
+  - §6.12 The completion ledger rules
+  - §6.13 Milestone → WBS mapping
+  - §6.14 The progress script specification
+- **PART 7 — Milestones and Acceptance**
+  - §7.1 Milestone discipline
+  - §7.2 M0 — Bootstrap and toolchain
+  - §7.3 M1 — Fetch and render text
+  - §7.4 M2 — HTML to DOM
+  - §7.5 M3 — CSS and the style system
+  - §7.6 M4 — Block layout
+  - §7.7 M5 — Painting to pixels
+  - §7.8 M6 — The first window
+  - §7.9 M7 — Text and inline layout
+  - §7.10 M8 — Images
+  - §7.11 M9 — The JavaScript engine
+  - §7.12 M10 — Scriptable DOM and events
+  - §7.13 M11 — The browser shell
+  - §7.14 M12 — Storage, cookies, and polish
+  - §7.15 M13 — Hardening, performance, release
+- **PART 8 — Testing Strategy**
+  - §8.1 The test pyramid
+  - §8.2 Unit test conventions
+  - §8.3 Golden-file tests
+  - §8.4 Layout tests
+  - §8.5 Pixel tests
+  - §8.6 Web Platform Tests adoption
+  - §8.7 Fuzzing
+  - §8.8 Continuous integration
+  - §8.9 Test data inventory
+- **PART 9 — Code Quality Standard**
+  - §9.1 Naming
+  - §9.2 Module and file conventions
+  - §9.3 Error handling standard
+  - §9.4 Unsafe code policy
+  - §9.5 Documentation
+  - §9.6 Lint configuration
+  - §9.7 Self-review checklist
+  - §9.8 Forbidden patterns
+  - §9.9 Refactoring rules
+  - §9.10 Dead code, TODOs, and placeholder policy
+  - §9.11 Change description template
+- **PART 10 — Performance and Resource Budgets**
+  - §10.1 The budget table
+  - §10.2 Measurement discipline
+  - §10.3 Memory budgets
+  - §10.4 Startup budget
+  - §10.5 Regression policy
+- **PART 11 — Deliverables, Documentation, Reporting**
+  - §11.1 Repository layout
+  - §11.2 Required documents
+  - §11.3 Commit discipline
+  - §11.4 Session report format
+  - §11.5 Demo artifacts
+  - §11.6 Release notes and changelog
+- **PART 12 — Session Protocol and State Management**
+  - §12.1 The state file: PROGRESS.md
+  - §12.2 Session start routine
+  - §12.3 Task selection rule
+  - §12.4 Checkpointing
+  - §12.5 Context-loss recovery
+  - §12.6 Multi-session continuity
+  - §12.7 The final delivery checklist
+- **PART 13 — Operational Runbooks**
+  - §13.1 Runbook: add a CSS property
+  - §13.2 Runbook: add an HTML element
+  - §13.3 Runbook: add a DOM interface (binding)
+  - §13.4 Runbook: add a JavaScript builtin
+  - §13.5 Runbook: adopt a WPT / test262 slice
+  - §13.6 Runbook: debugging the pipeline
+  - §13.7 Runbook: performance triage
+  - §13.8 Runbook: release (milestone exit → tag)
+- **APPENDIX A — CSS Named Colors**
+- **APPENDIX B — HTML Named Character References (common subset)**
+- **APPENDIX C — HTTP Header Field Reference**
+- **APPENDIX D — MIME Type Table**
+- **APPENDIX E — CSS Units**
+- **APPENDIX F — Keyboard Event Map**
+- **APPENDIX G — Default (UA) Stylesheet**
+- **APPENDIX H — Console Message Catalog**
+- **APPENDIX I — HTTP Status Code Reference**
+- **APPENDIX J — windows-1252 Remapping Table**
+- **APPENDIX K — HTML Tokenizer State Index**
+- **APPENDIX L — URL Parser State Index**
+- **APPENDIX M — DOMException Table**
+- **APPENDIX N — Implicit ARIA Roles**
+- **APPENDIX O — Glossary of Engine Terms**
+
+---
