@@ -6,8 +6,8 @@ is corrected.
 
 ## Current state
 
-- Milestone: M1 — Fetch and render text
-- WBS completion: 0% (auto: `scripts/wbs-progress.sh` — 0 of 2,680 items)
+- Milestone: M2 — HTML to DOM (tokenizer hardening; tree construction pending)
+- WBS completion: 8 of 2,680 items (0.30%; script rounds to 0%)
 - Standing placeholders: 0
 - Open AURORA-SHORTCUT tags: 0
 - Bench deltas vs last milestone: none (benchmarks land with the §10.1 table)
@@ -18,7 +18,14 @@ None.
 
 ## Debts
 
-None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
+- Tokenizer conformance is not complete: html5lib adoption and fuzz verification remain pending.
+- Double-escaped script states drop `<` and `/` from literal `</script>` text;
+  the existing escape-dance test incorrectly expects that loss. WHATWG
+  §13.2.5.27–31 requires both characters to be emitted. Fix this next with
+  corrected regression expectations before tree construction.
+- The input cursor buffers the whole document; streaming remains pending.
+- Earlier session reports mention configurable network deadlines and attribute
+  namespaces as deferred work; their completion has not been re-audited here.
 
 ## Decision log
 
@@ -33,6 +40,49 @@ None. (`docs/known-issues.md` is empty; no `AURORA-SHORTCUT` tags in the tree.)
 ## Session log
 
 (newest first, §11.4 template)
+
+## Session 2026-09-18-0000 — M2 slice 2 hardening: end-tag name fidelity, EOF recovery, attributes on end tags; 28 tests green
+- **Milestone:** M2 — HTML to DOM   **WBS items touched:** none (tokenizer
+  completes against html5lib, not yet adopted — nothing tickable)
+- **Implemented:**
+  - End-tag candidate fidelity in text modes: the temp buffer now keeps
+    original case (the standard's temporary buffer), the lowercase name
+    accumulates in `tag_name` from the first letter, and "appropriate"
+    compares that tag name to the last start tag (empty last-start-tag
+    never matches — the standard's missing precondition).
+  - EOF handling rewritten to the standard's shapes: text-mode `<` and
+    `</` at EOF emit themselves (no error); end-tag-name at EOF flushes
+    `</` + original-case buffer and reports no tokenizer error; escaped
+    script shapes additionally report
+    `eof-in-script-html-comment-like-text`; but once an appropriate name
+    has entered attribute/self-closing parsing, EOF is `eof-in-tag` and
+    the candidate is dropped (no literal fallback) — a three-way
+    distinction the old code flattened.
+  - End tags can now carry attributes and a trailing solidus: both are
+    reported (`end-tag-with-attributes`,
+    `end-tag-with-trailing-solidus`) and discarded; attributes no longer
+    leak into the following start tag.
+  - Removed `Cursor::at_eof` (§9.10) after the dead branch left with it.
+- **Tested:** fast tier — all green; aurora_html has 28 unit tests plus
+  its smoke test. Preserved the two pre-existing uncommitted regression
+  tests and added five more tests covering case preservation, EOF recovery,
+  attribute isolation, and end-tag errors. Both original failures were
+  reproduced before their fixes and rerun individually afterward. `cargo test -- --test-threads=1`
+  also green. `check-deps` OK; WBS unchanged (8/2680).
+  Note: a stale `aurora_net` test binary pointed at an old absolute path
+  and failed `fs::read`; `cargo clean -p aurora_net` + rebuild resolved it
+  (environment artifact, not a code fault).
+- **Bench:** n/a
+- **Decisions:** "appropriate" requires a non-empty last-start-tag
+  (missing-precondition); end-tag errors are centralized in `emit_end_tag`
+  (the flush path is single); EOF emission happens before the error report
+  to keep token order.
+- **Debts opened/closed:** opened — double-escaped script states still
+  drop `<`/`/` in `</script>` text (see Debts); the old escape-dance test
+  asserts the wrong behavior and must be corrected when fixing it.
+- **Next task:** fix the double-escaped `<`/`/` emission with corrected
+  expectations; then §5.5 tree construction (§12.3 rule b/c) and
+  html5lib adoption.
 
 ## Session 2026-09-14-0130 — M2 slice 2: the §13.4 tokenizer complete, 21 tests green
 - **Milestone:** M2 — HTML to DOM   **WBS items touched:** none tickable yet (html5lib adoption is the tick bar)

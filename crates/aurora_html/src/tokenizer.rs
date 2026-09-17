@@ -172,6 +172,7 @@ impl Tokenizer {
 
     fn emit_start_tag(&mut self, self_closing: bool) {
         if self.tag_is_end {
+            self.self_closing |= self_closing;
             self.emit_end_tag();
             return;
         }
@@ -200,6 +201,14 @@ impl Tokenizer {
     }
 
     fn emit_end_tag(&mut self) {
+        self.finish_attribute();
+        if !self.attrs.is_empty() {
+            self.error("end-tag-with-attributes");
+        }
+        if self.self_closing {
+            self.error("end-tag-with-trailing-solidus");
+        }
+        self.attrs.clear();
         let name = std::mem::take(&mut self.tag_name);
         self.completed = Some(Token::EndTag { name });
     }
@@ -238,10 +247,8 @@ impl Tokenizer {
         self.run.push_str(&buffered);
     }
 
-    /// Whether the temp buffer names the last emitted start tag (the
-    /// standard's "appropriate end tag token").
-    fn temp_is_appropriate_end_tag(&mut self) -> bool {
-        self.temp == self.last_start_tag_name
+    fn is_appropriate_end_tag(&self) -> bool {
+        !self.last_start_tag_name.is_empty() && self.tag_name == self.last_start_tag_name
     }
 
     // ---- the state machine -------------------------------------------------
@@ -290,9 +297,10 @@ impl Tokenizer {
             State::RcdataEndTagOpen => {
                 if c.is_ascii_alphabetic() {
                     self.temp.clear();
-                    self.temp.push(c.to_ascii_lowercase());
+                    self.temp.push(c);
                     self.reset_tag_buffers();
-                    self.tag_name.clear();
+                    self.tag_is_end = true;
+                    self.tag_name.push(c.to_ascii_lowercase());
                     self.state = State::RcdataEndTagName;
                 } else {
                     self.run.push_str("</");
@@ -319,9 +327,10 @@ impl Tokenizer {
             State::RawtextEndTagOpen => {
                 if c.is_ascii_alphabetic() {
                     self.temp.clear();
-                    self.temp.push(c.to_ascii_lowercase());
+                    self.temp.push(c);
                     self.reset_tag_buffers();
-                    self.tag_name.clear();
+                    self.tag_is_end = true;
+                    self.tag_name.push(c.to_ascii_lowercase());
                     self.state = State::RawtextEndTagName;
                 } else {
                     self.run.push_str("</");
@@ -352,9 +361,10 @@ impl Tokenizer {
             State::ScriptDataEndTagOpen => {
                 if c.is_ascii_alphabetic() {
                     self.temp.clear();
-                    self.temp.push(c.to_ascii_lowercase());
+                    self.temp.push(c);
                     self.reset_tag_buffers();
-                    self.tag_name.clear();
+                    self.tag_is_end = true;
+                    self.tag_name.push(c.to_ascii_lowercase());
                     self.state = State::ScriptDataEndTagName;
                 } else {
                     self.run.push_str("</");
@@ -438,9 +448,10 @@ impl Tokenizer {
             State::ScriptDataEscapedEndTagOpen => {
                 if c.is_ascii_alphabetic() {
                     self.temp.clear();
-                    self.temp.push(c.to_ascii_lowercase());
+                    self.temp.push(c);
                     self.reset_tag_buffers();
-                    self.tag_name.clear();
+                    self.tag_is_end = true;
+                    self.tag_name.push(c.to_ascii_lowercase());
                     self.state = State::ScriptDataEscapedEndTagName;
                 } else {
                     self.run.push_str("</");
@@ -1236,11 +1247,12 @@ impl Tokenizer {
     /// literal characters and `fallback` reconsumes.
     fn end_tag_name(&mut self, c: char, fallback: State) {
         if c.is_ascii_alphabetic() {
-            self.temp.push(c.to_ascii_lowercase());
+            self.temp.push(c);
+            self.tag_name.push(c.to_ascii_lowercase());
             return;
         }
         let appropriate = match c {
-            '\t' | '\n' | '\u{0C}' | ' ' | '/' | '>' => self.temp_is_appropriate_end_tag(),
+            '\t' | '\n' | '\u{0C}' | ' ' | '/' | '>' => self.is_appropriate_end_tag(),
             _ => false,
         };
         if appropriate && c == '>' {
@@ -1257,11 +1269,6 @@ impl Tokenizer {
             return;
         }
         self.flush_premature_end_tag();
-        if self.cursor.at_eof() {
-            self.error("eof-in-tag");
-            self.state = fallback;
-            return;
-        }
         self.reconsume_in(fallback);
     }
 
@@ -1291,15 +1298,23 @@ impl Tokenizer {
             | State::ScriptDataEscapedDashDash
             | State::ScriptDataDoubleEscapeStart
             | State::ScriptDataDoubleEscapeEnd
-            | State::RcdataLessThanSign
-            | State::RcdataEndTagOpen
-            | State::RawtextLessThanSign
-            | State::RawtextEndTagOpen
-            | State::ScriptDataLessThanSign
-            | State::ScriptDataEndTagOpen
-            | State::ScriptDataEscapedLessThanSign
-            | State::ScriptDataEscapedEndTagOpen
             | State::ScriptDataDoubleEscapedLessThanSign => {
+                self.error("eof-in-script-html-comment-like-text");
+            }
+            State::RcdataLessThanSign
+            | State::RawtextLessThanSign
+            | State::ScriptDataLessThanSign => {
+                self.emit_char('<');
+            }
+            State::RcdataEndTagOpen | State::RawtextEndTagOpen | State::ScriptDataEndTagOpen => {
+                self.run.push_str("</");
+            }
+            State::ScriptDataEscapedLessThanSign => {
+                self.emit_char('<');
+                self.error("eof-in-script-html-comment-like-text");
+            }
+            State::ScriptDataEscapedEndTagOpen => {
+                self.run.push_str("</");
                 self.error("eof-in-script-html-comment-like-text");
             }
             State::TagOpen => {
@@ -1363,12 +1378,12 @@ impl Tokenizer {
             State::CharacterReference => {
                 self.emit_char('&');
             }
-            State::RcdataEndTagName
-            | State::RawtextEndTagName
-            | State::ScriptDataEndTagName
-            | State::ScriptDataEscapedEndTagName => {
-                self.error("eof-in-tag");
+            State::RcdataEndTagName | State::RawtextEndTagName | State::ScriptDataEndTagName => {
                 self.flush_premature_end_tag();
+            }
+            State::ScriptDataEscapedEndTagName => {
+                self.flush_premature_end_tag();
+                self.error("eof-in-script-html-comment-like-text");
             }
         }
         self.eof_done = true;
@@ -1610,6 +1625,193 @@ var x = "</scr" + "ipt>";"#,
         // silently (§13.2.5.30) — that is exactly why it cannot close the
         // script element; only the final real end tag does.
         assert_eq!(body, "<!--<script>xscript>-->");
+    }
+
+    #[test]
+    fn rcdata_preserves_unmatched_end_tags_and_names_the_matching_close() {
+        let mut tokenizer = Tokenizer::new(
+            "a</p>b</textarea>",
+            TokenizerOptions {
+                initial_state: InitialState::Rcdata,
+                ..TokenizerOptions::default()
+            },
+        );
+        tokenizer.set_last_start_tag_for_tests("textarea");
+        let tokens: Vec<_> = std::iter::from_fn(|| tokenizer.next_token()).collect();
+        assert!(!tokens.iter().any(|token| matches!(
+            token,
+            Token::EndTag { name } if name == "p"
+        )));
+        assert_eq!(
+            tokens,
+            vec![
+                Token::Character("a</p>b".into()),
+                Token::EndTag {
+                    name: "textarea".into()
+                },
+            ]
+        );
+        assert!(tokenizer.errors().is_empty());
+    }
+
+    #[test]
+    fn text_modes_preserve_unmatched_tags_and_emit_matching_end_tag_names() {
+        for state in [
+            InitialState::Rcdata,
+            InitialState::Rawtext,
+            InitialState::ScriptData,
+        ] {
+            for close in ["</TiTlE>", "</TiTlE >", "</TiTlE/>"] {
+                let input = format!("a</P>b{close}<i>");
+                let mut tokenizer = Tokenizer::new(
+                    &input,
+                    TokenizerOptions {
+                        initial_state: state,
+                        ..TokenizerOptions::default()
+                    },
+                );
+                tokenizer.set_last_start_tag_for_tests("title");
+                let tokens: Vec<_> = std::iter::from_fn(|| tokenizer.next_token()).collect();
+                assert_eq!(
+                    tokens,
+                    vec![
+                        Token::Character("a</P>b".into()),
+                        Token::EndTag {
+                            name: "title".into()
+                        },
+                        Token::StartTag {
+                            name: "i".into(),
+                            attrs: vec![],
+                            self_closing: false,
+                        },
+                    ],
+                    "{state:?}: {close}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn text_mode_end_tag_fallback_at_eof_preserves_input() {
+        for state in [
+            InitialState::Rcdata,
+            InitialState::Rawtext,
+            InitialState::ScriptData,
+        ] {
+            for input in ["<", "</", "</Ti", "</TiTlE", "</P>", "</TiTlE!", "</TiTlEé"] {
+                let mut tokenizer = Tokenizer::new(
+                    input,
+                    TokenizerOptions {
+                        initial_state: state,
+                        ..TokenizerOptions::default()
+                    },
+                );
+                tokenizer.set_last_start_tag_for_tests("title");
+                let tokens: Vec<_> = std::iter::from_fn(|| tokenizer.next_token()).collect();
+                assert_eq!(
+                    tokens,
+                    vec![Token::Character(input.into())],
+                    "{state:?}: {input}"
+                );
+                assert!(
+                    tokenizer.errors().is_empty(),
+                    "{state:?}: {input}: {:?}",
+                    tokenizer.errors()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn appropriate_text_end_tag_eof_after_delimiter_drops_candidate() {
+        for state in [
+            InitialState::Rcdata,
+            InitialState::Rawtext,
+            InitialState::ScriptData,
+        ] {
+            for input in ["a</TiTlE ", "a</TiTlE/", "a</TiTlE class='x"] {
+                let mut tokenizer = Tokenizer::new(
+                    input,
+                    TokenizerOptions {
+                        initial_state: state,
+                        ..TokenizerOptions::default()
+                    },
+                );
+                tokenizer.set_last_start_tag_for_tests("title");
+                let tokens: Vec<_> = std::iter::from_fn(|| tokenizer.next_token()).collect();
+                assert_eq!(tokens, vec![Token::Character("a".into())]);
+                assert_eq!(tokenizer.errors(), ["eof-in-tag"]);
+            }
+        }
+    }
+
+    #[test]
+    fn escaped_script_end_tags_preserve_case_and_close() {
+        for close in ["</ScRiPt>", "</ScRiPt >", "</ScRiPt/>"] {
+            let input = format!("<!--a</P>b{close}<i>");
+            let mut tokenizer = Tokenizer::new(
+                &input,
+                TokenizerOptions {
+                    initial_state: InitialState::ScriptData,
+                    ..TokenizerOptions::default()
+                },
+            );
+            tokenizer.set_last_start_tag_for_tests("script");
+            let tokens: Vec<_> = std::iter::from_fn(|| tokenizer.next_token()).collect();
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::Character("<!--a</P>b".into()),
+                    Token::EndTag {
+                        name: "script".into()
+                    },
+                    Token::StartTag {
+                        name: "i".into(),
+                        attrs: vec![],
+                        self_closing: false
+                    },
+                ]
+            );
+        }
+    }
+
+    #[test]
+    fn escaped_script_end_tag_eof_preserves_input_and_reports_error() {
+        for input in ["<!--<", "<!--</", "<!--</ScRiPt", "<!--</P>"] {
+            let mut tokenizer = Tokenizer::new(
+                input,
+                TokenizerOptions {
+                    initial_state: InitialState::ScriptData,
+                    ..TokenizerOptions::default()
+                },
+            );
+            tokenizer.set_last_start_tag_for_tests("script");
+            let tokens: Vec<_> = std::iter::from_fn(|| tokenizer.next_token()).collect();
+            assert_eq!(tokens, vec![Token::Character(input.into())]);
+            assert_eq!(tokenizer.errors(), ["eof-in-script-html-comment-like-text"]);
+        }
+    }
+
+    #[test]
+    fn end_tag_attributes_do_not_leak_into_following_start_tag() {
+        let (tokens, errors) = tokenize("</p class=x/><i>");
+        assert_eq!(
+            tokens,
+            vec![
+                Token::EndTag { name: "p".into() },
+                Token::StartTag {
+                    name: "i".into(),
+                    attrs: vec![],
+                    self_closing: false
+                },
+            ]
+        );
+        assert_eq!(errors, ["end-tag-with-attributes"]);
+        let (_, errors) = tokenize("</p class='x'/>");
+        assert_eq!(
+            errors,
+            ["end-tag-with-attributes", "end-tag-with-trailing-solidus"]
+        );
     }
 
     #[test]

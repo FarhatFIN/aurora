@@ -58,12 +58,6 @@ impl Cursor {
         self.position = self.position.saturating_sub(1);
     }
 
-    /// Whether the cursor is at EOF.
-    #[must_use]
-    pub fn at_eof(&self) -> bool {
-        self.position >= self.chars.len()
-    }
-
     /// ASCII-case-insensitive variant of [`Cursor::starts_with`].
     #[must_use]
     pub fn starts_with_ignore_case(&self, text: &str) -> bool {

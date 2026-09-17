@@ -106,8 +106,13 @@ CURRENT STATE (update me every session)
   surface (append/insert_before/remove/set_attribute/clone-ready
   queries), HTML serialization per the WHATWG algorithm (iterative, no
   recursion; raw-text literal; standard escape sets). 103 tests green.
-- IN FLIGHT: nothing — the working tree is clean.
-- NEXT TASK (be specific): §5.5 tree construction in aurora_html
+- IN FLIGHT: uncommitted tokenizer end-tag fixes, five new regression
+  tests, and refreshed progress notes. Two pre-existing uncommitted tests
+  were preserved. Fast tier and single-threaded tests pass; no commit made.
+- NEXT TASK (be specific): fix double-escaped script literal `<` and `/`
+  emission: the existing escape-dance test wrongly expects their loss.
+  WHATWG §13.2.5.27–31 emits both; see PROGRESS.md Debts. Then resume
+  §5.5 tree construction in aurora_html
   (`tree_builder.rs`): insertion modes over the tokenizer's Token stream
   (aurora_html::Tokenizer is public; Token::StartTag/EndTag/Comment/
   Character/Doctype), filling aurora_dom's Document (append/
