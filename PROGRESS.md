@@ -19,10 +19,8 @@ None.
 ## Debts
 
 - Tokenizer conformance is not complete: html5lib adoption and fuzz verification remain pending.
-- Double-escaped script states drop `<` and `/` from literal `</script>` text;
-  the existing escape-dance test incorrectly expects that loss. WHATWG
-  §13.2.5.27–31 requires both characters to be emitted. Fix this next with
-  corrected regression expectations before tree construction.
+- Tree construction remains pending; DOCTYPE classification and guarded DOM
+  insertion are available as a prerequisite, not a complete initial mode.
 - The input cursor buffers the whole document; streaming remains pending.
 - Earlier session reports mention configurable network deadlines and attribute
   namespaces as deferred work; their completion has not been re-audited here.
@@ -40,6 +38,20 @@ None.
 ## Session log
 
 (newest first, §11.4 template)
+
+## Session 2026-09-18 — script fidelity and DOCTYPE prerequisite
+- **Implemented:** double-escaped script preserves literal `<` and `/`, with
+  EOF diagnostics and 66 matrix cases; pushed as ccdfca3 after 7364845.
+  Added Doctype token conversion, force-quirks preservation, legacy public
+  identifier classification, and guarded insertion into Document. Duplicate
+  doctypes or an existing document element prevent insertion and mode changes.
+- **Tested:** fast tier and dependency policy passed; aurora_html has 41 unit
+  tests, two DOCTYPE integration tests, and one smoke test. Targeted DOCTYPE
+  tests and clippy were rerun successfully before commit.
+- **Scope:** this is a prerequisite of §5.5, not a complete tree constructor.
+  No WBS ticks; html5lib conformance remains unverified.
+- **Next task:** implement initial/before-html/before-head insertion modes
+  and tokenizer/tree-builder coordination, then head/text modes.
 
 ## Session 2026-09-18-0000 — M2 slice 2 hardening: end-tag name fidelity, EOF recovery, attributes on end tags; 28 tests green
 - **Milestone:** M2 — HTML to DOM   **WBS items touched:** none (tokenizer

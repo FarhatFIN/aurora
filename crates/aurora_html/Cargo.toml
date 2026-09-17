@@ -10,5 +10,10 @@ publish = false
 # Zero dependencies at M0; §3.3 Tier 1 additions require the milestone that
 # needs them plus a one-line justification here.
 
+[dependencies]
+# aurora_dom is in aurora_html's §4.3 allowed set; the tree constructor builds
+# Documents directly, so the dependency is structural (check-deps.sh).
+aurora_dom = { path = "../aurora_dom" }
+
 [lints]
 workspace = true

@@ -70,6 +70,10 @@ impl Document {
         self.quirks
     }
 
+    pub fn set_quirks(&mut self, quirks: QuirksMode) {
+        self.quirks = quirks;
+    }
+
     /// Resolves a handle to its node, if live (generation check, §4.5).
     #[must_use]
     pub fn node(&self, id: NodeId) -> Option<&Node> {

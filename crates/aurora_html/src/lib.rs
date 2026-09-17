@@ -8,6 +8,7 @@
 //! re-exports (§4.10).
 
 mod cursor;
+mod doctype;
 mod facade;
 mod reference;
 mod tables;
