@@ -481,7 +481,10 @@ impl Tokenizer {
                     self.emit_char('-');
                     self.state = State::ScriptDataDoubleEscapedDash;
                 }
-                '<' => self.state = State::ScriptDataDoubleEscapedLessThanSign,
+                '<' => {
+                    self.emit_char('<');
+                    self.state = State::ScriptDataDoubleEscapedLessThanSign;
+                }
                 '\0' => {
                     self.error("unexpected-null-character");
                     self.emit_char('\u{FFFD}');
@@ -493,7 +496,10 @@ impl Tokenizer {
                     self.emit_char('-');
                     self.state = State::ScriptDataDoubleEscapedDashDash;
                 }
-                '<' => self.state = State::ScriptDataDoubleEscapedLessThanSign,
+                '<' => {
+                    self.emit_char('<');
+                    self.state = State::ScriptDataDoubleEscapedLessThanSign;
+                }
                 '\0' => {
                     self.error("unexpected-null-character");
                     self.emit_char('\u{FFFD}');
@@ -506,7 +512,10 @@ impl Tokenizer {
             },
             State::ScriptDataDoubleEscapedDashDash => match c {
                 '-' => self.emit_char('-'),
-                '<' => self.state = State::ScriptDataDoubleEscapedLessThanSign,
+                '<' => {
+                    self.emit_char('<');
+                    self.state = State::ScriptDataDoubleEscapedLessThanSign;
+                }
                 '>' => {
                     self.emit_char('>');
                     self.state = State::ScriptData;
@@ -523,10 +532,10 @@ impl Tokenizer {
             },
             State::ScriptDataDoubleEscapedLessThanSign => {
                 if c == '/' {
+                    self.emit_char('/');
                     self.temp.clear();
                     self.state = State::ScriptDataDoubleEscapeEnd;
                 } else {
-                    self.emit_char('<');
                     self.reconsume_in(State::ScriptDataDoubleEscaped);
                 }
             }
@@ -1287,15 +1296,15 @@ impl Tokenizer {
             | State::Rawtext
             | State::ScriptData
             | State::PlainText
-            | State::ScriptDataDoubleEscaped
-            | State::ScriptDataDoubleEscapedDash
-            | State::ScriptDataDoubleEscapedDashDash
             | State::ScriptDataEscapeStart
             | State::ScriptDataEscapeStartDash
             | State::MarkupDeclarationOpen => {}
             State::ScriptDataEscaped
             | State::ScriptDataEscapedDash
             | State::ScriptDataEscapedDashDash
+            | State::ScriptDataDoubleEscaped
+            | State::ScriptDataDoubleEscapedDash
+            | State::ScriptDataDoubleEscapedDashDash
             | State::ScriptDataDoubleEscapeStart
             | State::ScriptDataDoubleEscapeEnd
             | State::ScriptDataDoubleEscapedLessThanSign => {
@@ -1614,17 +1623,92 @@ var x = "</scr" + "ipt>";"#,
             tokens.push(token);
         }
         assert!(tokenizer.errors().is_empty(), "{:?}", tokenizer.errors());
-        let body: String = tokens
-            .iter()
-            .map_while(|token| match token {
-                Token::Character(text) => Some(text.as_str()),
-                _ => None,
-            })
-            .collect();
-        // In the double-escaped state the '/' of "</script>" is consumed
-        // silently (§13.2.5.30) — that is exactly why it cannot close the
-        // script element; only the final real end tag does.
-        assert_eq!(body, "<!--<script>xscript>-->");
+        assert_eq!(
+            tokens,
+            vec![
+                Token::Character("<!--<script>x</script>-->".into()),
+                Token::EndTag {
+                    name: "script".into()
+                },
+                Token::Character("ok".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn double_escaped_script_eof_preserves_input_and_reports_error() {
+        for dash in ["", "-", "--"] {
+            for suffix in ["", "<", "</", "</ScRiPt", "<x", "<<", "</style>"] {
+                let input = format!("<!--<script>x{dash}{suffix}");
+                let mut tokenizer = Tokenizer::new(
+                    &input,
+                    TokenizerOptions {
+                        initial_state: InitialState::ScriptData,
+                        ..TokenizerOptions::default()
+                    },
+                );
+                tokenizer.set_last_start_tag_for_tests("script");
+                let tokens: Vec<_> = std::iter::from_fn(|| tokenizer.next_token()).collect();
+                assert_eq!(tokens, vec![Token::Character(input.clone())], "{input:?}");
+                assert_eq!(
+                    tokenizer.errors(),
+                    ["eof-in-script-html-comment-like-text"],
+                    "{input:?}"
+                );
+                assert_eq!(tokenizer.next_token(), None, "{input:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn double_escaped_script_end_candidates_preserve_literal_text() {
+        for dash in ["", "-", "--"] {
+            for candidate in [
+                "</script>",
+                "</ScRiPt>",
+                "</ScRiPt >",
+                "</ScRiPt\t>",
+                "</ScRiPt\n>",
+                "</ScRiPt\u{0C}>",
+                "</ScRiPt/>",
+                "</style></script>",
+                "</scriptx></script>",
+                "</scrip></script>",
+                "</script!></script>",
+                "</scripté></script>",
+                "</></script>",
+                "<x</script>",
+                "<<</script>",
+            ] {
+                let body = format!("<!--<ScRiPt>x{dash}{candidate}");
+                let input = format!("{body}</script>ok");
+                let mut tokenizer = Tokenizer::new(
+                    &input,
+                    TokenizerOptions {
+                        initial_state: InitialState::ScriptData,
+                        ..TokenizerOptions::default()
+                    },
+                );
+                tokenizer.set_last_start_tag_for_tests("script");
+                let tokens: Vec<_> = std::iter::from_fn(|| tokenizer.next_token()).collect();
+                assert_eq!(
+                    tokens,
+                    vec![
+                        Token::Character(body),
+                        Token::EndTag {
+                            name: "script".into()
+                        },
+                        Token::Character("ok".into()),
+                    ],
+                    "{input:?}"
+                );
+                assert!(
+                    tokenizer.errors().is_empty(),
+                    "{input:?}: {:?}",
+                    tokenizer.errors()
+                );
+            }
+        }
     }
 
     #[test]
